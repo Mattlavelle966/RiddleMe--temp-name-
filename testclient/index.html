@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>mediasoup audio test</title>
+</head>
+<body>
+  <!-- Button the user clicks to start the whole join/init/mic flow -->
+  <button id="joinBtn">join audio</button>
+
+  <!-- Label for the local audio player -->
+  <div>local</div>
+
+  <!-- Audio element for this client's own microphone stream
+       autoplay = start playing automatically
+       muted = do not play your own voice back to yourself
+       controls = show browser audio controls -->
+  <audio id="localAudio" autoplay muted controls></audio>
+
+  <!-- Label for remote audio area -->
+  <div>remote</div>
+
+  <!-- Container where remote <audio> elements will be added dynamically
+       One remote producer = one audio element -->
+  <div id="remoteContainer"></div>
+
+  <!-- Simple text log area so you can see the flow on screen -->
+  <pre id="log"></pre>
+
+  <!-- Socket.io client library served automatically by the server -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script type="module">
+    // Import your browser-side mediasoup helper class
+    import { MediaClient } from './mediaClient.js';
+
+    // Grab references to important DOM elements
+    const joinBtn = document.getElementById('joinBtn');                 // Start/join button
+    const localAudio = document.getElementById('localAudio');           // Local audio player
+    const remoteContainer = document.getElementById('remoteContainer'); // Where remote audio tags are inserted
+    const logBox = document.getElementById('log');                      // On-page text log
+
+    // Create one MediaClient instance connected to your local signaling server
+    const client = new MediaClient('http://localhost:3000');
+
+    function log(...parts) {
+      // Join all provided pieces into one string line
+      const line = parts.join(' ');
+
+      // Also print to the browser dev console
+      console.log(line);
+
+      // Append the same line into the visible <pre> log box
+      logBox.textContent += line + '\n';
+    }
+
+    // This callback is called by MediaClient whenever a remote producer
+    // is successfully consumed and wrapped into a MediaStream
+    client.onRemoteStream = ({ stream, producerId }) => {
+      // Try to find an existing <audio> element for this exact producer
+      // The id format is "remote-<producerId>"
+      let audio = document.getElementById(`remote-${producerId}`);
+
+      // If no audio element exists yet for this producer, create one
+      if (!audio) {
+        audio = document.createElement('audio');        // Create a new audio element
+        audio.id = `remote-${producerId}`;              // Give it a unique id using the producer id
+        audio.autoplay = true;                          // Start playback automatically
+        audio.controls = true;                          // Show playback controls
+        remoteContainer.appendChild(audio);             // Add it into the page
+      }
+
+      // Attach the incoming remote MediaStream to the audio element
+      audio.srcObject = stream;
+
+      // Log which producer was attached
+      // This producerId is the same remote source id you see in your logs
+      log('remote stream attached:', producerId);
+    };
+
+    // What happens when the user clicks "join audio"
+    joinBtn.onclick = async () => {
+      try {
+        // Disable the button immediately so user cannot spam-click it
+        joinBtn.disabled = true;
+
+        // Step 1: initialize mediasoup client + socket + transports
+        log('initializing client...');
+        await client.init();
+
+        // Step 2: start the microphone and produce local audio
+        log('starting mic...');
+        const localStream = await client.startMic();
+
+        // Attach the local microphone stream to the local audio element
+        // Since it is muted, you can see it there without hearing yourself
+        localAudio.srcObject = localStream;
+
+        // Step 3: ask the server for any producers that already existed
+        // before this user joined, then consume them
+        log('consuming existing producers...');
+        await client.consumeExistingProducers();
+
+        // Everything needed is now set up
+        log('ready');
+      } catch (error) {
+        // If anything fails anywhere in the process, log the error message
+        log('ERROR:', error.message);
+
+        // Re-enable the button so the user can try again
+        joinBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
