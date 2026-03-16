@@ -1,0 +1,9 @@
+# dependencies
+server/node_modules/
+testclient/node_modules/
+#
+*.db
+
+
+
+

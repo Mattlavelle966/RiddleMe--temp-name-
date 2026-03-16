@@ -2,7 +2,7 @@ const express = require('express');          // Express web framework for servin
 const http = require('http');                // Node HTTP server module
 const path = require('path');                // Utility for safely building file paths
 const { Server } = require('socket.io');     // Socket.io server for real-time signaling between client/server
-
+const { usersRouter } = require('./api/users');
 const app = express();                       // Create the Express app
 const server = http.createServer(app);       // Wrap Express in a raw HTTP server
 const io = new Server(server);               // Attach Socket.io to the HTTP server
@@ -10,8 +10,14 @@ const io = new Server(server);               // Attach Socket.io to the HTTP ser
 const { createWorkerAndRouter } = require('./mediasoup/mediasoup');
 const registerSocketHandlers = require('./sockets/socketHandlers');
 
+
+
+app.use(express.json());
+app.use('/api', usersRouter);
+
 // Serve everything in ../testclient as static files
 // So opening localhost:3000 will load the browser client from that folder
+
 app.use(express.static(path.join(__dirname, '../testclient')));
 
 io.on('connection', (socket) => {
