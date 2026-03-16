@@ -2,7 +2,14 @@
 
 This directory contains the **backend server implementation** for the Riddle-Me project.
 
-The server currently provides the **real-time communication layer** used for peer connections and voice communication. It is the core foundation that future backend systems will build on.
+## How to Run
+
+From the `server/` directory:
+
+```bash 
+npm install
+npx tsx server.ts
+```
 
 ## Responsibilities
 
@@ -22,7 +29,12 @@ The server currently handles:
 - Producer creation (sending audio)
 - Consumer creation (receiving audio)
 - Peer tracking using a socket ID keyed peer map
+- SQLite database for persistent user accounts
+- Drizzle ORM schema for user storage
+- User authentication endpoints (`/api/register`, `/api/login`)
+- JWT token authentication middleware
+- Token Protected API routes (example: `/api/me`)
 
-At this stage the server supports **basic peer-to-peer voice communication routed through the server using mediasoup**.
+At this stage the server supports **basic multi-peer voice communication using a mediasoup SFU**, along with **persistent user account storage and authentication** through **SQLite, Drizzle ORM, register/login endpoints, JWT middleware, and protected API routes**. Audio is sent from each client to the server, which then forwards the relevant streams to the other connected peers.
 
 More backend systems and services will be added here as development continues.
