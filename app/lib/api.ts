@@ -21,6 +21,15 @@ export async function api(path: string, options: RequestInit = {}) {
 
   return data;
 }
+
+export async function getUserStatus(userId: string) {
+  return api(`/api/users/${userId}/status`);
+}
+
+export async function getUsers() {
+  return api("/api/users");
+}
+
 export async function getMe() {
   return api("/api/me");
 }

@@ -17,6 +17,22 @@ export function connectSocket() {
   return socket;
 }
 
+export function connectToUserSocket(targetUserId: string) {
+  return new Promise((resolve) => {
+    if (!socket) {
+      console.log("no socket");
+      resolve({ error: "no socket" });
+      return;
+    }
+
+    socket.emit("connectToUser", { targetUserId }, (result: any) => {
+      console.log("connectToUser result", result);
+      resolve(result);
+    });
+  });
+}
+
+
 export function getSocket() {
   return socket;
 }

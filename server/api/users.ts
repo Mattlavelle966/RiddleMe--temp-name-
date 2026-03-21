@@ -6,6 +6,7 @@ import { db } from "../db/index";
 import { users } from "../db/schema";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
+import { getSocketIdByUserId } from "../sockets/socketBindings"
 
 const JWT_SECRET = "dev-secret";
 export const usersRouter = Router();
@@ -73,4 +74,25 @@ usersRouter.post("/login", async (req,res) => {
 
   res.json({token});
 
+});
+
+//get all users
+usersRouter.get("/users", auth, async (req, res) => {
+  const result = await db.select({
+    id: users.id,
+    username: users.username,
+  }).from(users);
+
+  res.json({ users: result });
+});
+
+//Returns user server connection status bool
+usersRouter.get("/users/:userId/status", auth, (req, res) => {
+  const { userId } = req.params;
+  const socketId = getSocketIdByUserId(userId);
+
+  res.json({
+    userId,
+    online: !!socketId,
+  });
 });
