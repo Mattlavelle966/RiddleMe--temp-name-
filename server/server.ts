@@ -6,12 +6,15 @@ const { usersRouter } = require('./api/users');
 const app = express();                       // Create the Express app
 const server = http.createServer(app);       // Wrap Express in a raw HTTP server
 const io = new Server(server);               // Attach Socket.io to the HTTP server
+const cors = require("cors");
+
 
 const { createWorkerAndRouter } = require('./mediasoup/mediasoup');
 const registerSocketHandlers = require('./sockets/socketHandlers');
 
 
 
+app.use(cors());
 app.use(express.json());
 app.use('/api', usersRouter);
 
