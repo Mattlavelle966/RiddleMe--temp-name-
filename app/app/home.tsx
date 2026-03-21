@@ -1,13 +1,24 @@
 import { View, Text, Button } from "react-native";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { clearAuth, getToken, getUsername } from "../store/auth";
 import { getBaseUrl } from "../store/connection";
+import { useEffect } from "react";
+import { connectSocket } from "../lib/socket";
 
 export default function Home() {
-  if (!getToken()) {
-    router.replace("/login");
-    return null;
+  const token = getToken();
+
+
+  useEffect(() => {
+    if (token) {
+      connectSocket();
+    }
+  }, [token]);
+
+  if (!token) {
+    return <Redirect href="/login" />;
   }
+
 
   return (
     <View style={{ flex: 1, justifyContent: "center", padding: 20, gap: 12 }}>

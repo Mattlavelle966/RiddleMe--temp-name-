@@ -21,3 +21,6 @@ export async function api(path: string, options: RequestInit = {}) {
 
   return data;
 }
+export async function getMe() {
+  return api("/api/me");
+}
