@@ -25,6 +25,37 @@ export class MediaClient {
     });
   }
 
+  onIncomingCall(handler) {
+    this.socket.on("incomingCall", handler);
+  }
+
+  offIncomingCall(handler) {
+    this.socket.off("incomingCall", handler);
+  }
+  onCallAccepted(handler) {
+    this.socket.on("callAccepted", handler);
+  }
+
+  offCallAccepted(handler) {
+    this.socket.off("callAccepted", handler);
+  }
+
+  onCallDeclined(handler) {
+    this.socket.on("callDeclined", handler);
+  }
+
+  offCallDeclined(handler) {
+    this.socket.off("callDeclined", handler);
+  }
+
+  acceptCall(callId) {
+    return this.request("acceptCall", { callId });
+  }
+
+  declineCall(callId) {
+    return this.request("declineCall", { callId });
+  }
+
   async init() {
     // Ask the server what RTP capabilities its mediasoup router supports
     // The client must know this before it can create/load a mediasoup Device

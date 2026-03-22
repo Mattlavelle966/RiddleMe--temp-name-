@@ -1,77 +1,63 @@
-import { View, Text, Button } from "react-native";
-import { Redirect, router } from "expo-router";
-import { clearAuth, getToken, getUsername } from "../store/auth";
+import { View, Text } from "react-native";
+import { Redirect } from "expo-router";
+import {  getToken, getUsername } from "../store/auth";
 import { getBaseUrl } from "../store/connection";
-import { useEffect, useState } from "react";
-import { connectSocket } from "../lib/socket";
-import { connectToUserSocket } from "../lib/socket";
+
+
+import { useState } from "react";
+import { requestCall, acceptIncomingCallSession, declineIncomingCallSession,} from "../lib/callSessions";
 import ConnectionWindow from "../components/ConnectionWindow";
 import { getUsers, getUserStatus } from "../lib/api";
-import { MediaClient } from "../lib/mediaClient";
 
-let mediaClient: MediaClient | null = null;
+import { useUserStatusPolling } from "../hooks/useUserStatusPolling";
+import MainPanel from "../components/MainPanel";
+import { useIncomingCall } from "../hooks/useIncomingCall";
+
+import { useCallEvents, getMediaClient } from "../hooks/useCallEvents";
+
+
+
 
 export default function Home() {
   const token = getToken();
   const [users, setUsers] = useState([]);
   const [userStatus, setUserStatus] = useState<Record<string, string>>({});
+  const { incomingCall, showIncomingCall, clearIncomingCall } = useIncomingCall();
 
-  async function checkStatus(userId: string) {
-    try {
-      const data = await getUserStatus(userId);
-
-      setUserStatus((prev) => ({
-        ...prev,
-        [userId]: data.online ? "online" : "offline",
-      }));
-    } catch {
-      setUserStatus((prev) => ({
-        ...prev,
-        [userId]: "error",
-      }));
-    }
-  }
+  useUserStatusPolling(users, token, setUserStatus);
+  useCallEvents(token, showIncomingCall, clearIncomingCall, setUsers, getUsers);
 
   async function connectToUser(userId: string) {
-    const result = await connectToUserSocket(userId); // signaling
-    if (!result?.ok) {
+    const result = await requestCall(userId);
+
+    if(!result?.ok){
       console.log("Call Failed");
       return;
-    };
+    }
 
-    mediaClient = new MediaClient();
-    
-    mediaClient.onRemoteStream = ({ stream, producerId }) => {
-      console.log("remote stream arrived", producerId, stream);
-      const audio = document.createElement("audio");
-      audio.srcObject = stream;
-      audio.autoplay = true;
-      audio.controls = true;
-      audio.muted = false;
+    console.log("waiting for call acceptance", result.callId);
 
-      document.body.appendChild(audio);
-
-      audio.play().then(() => {
-        console.log("audio playing");
-      }).catch((err) => {
-        console.log("audio play failed", err);
-      });
-    };
-
-    console.log("mic init")
-    await mediaClient.init();
-    console.log("startMic")
-    await mediaClient.startMic();
-    console.log("begin consumption")
-    await mediaClient.consumeExistingProducers();
   }
 
-  useEffect(() => {
-    if (token) {
-      connectSocket();
-      getUsers().then((data) => setUsers(data.users));
+  async function acceptIncomingCall() {
+    const mediaClient = getMediaClient();
+    if (!incomingCall || !mediaClient) {
+      return;
     }
-  }, [token]);
+
+    await acceptIncomingCallSession(mediaClient, incomingCall.callId);
+    clearIncomingCall();
+  }
+  async function declineIncomingCall() {
+    const mediaClient = getMediaClient();
+    if (!incomingCall || !mediaClient) {
+      return;
+    }
+
+    await declineIncomingCallSession(mediaClient, incomingCall.callId);
+    clearIncomingCall();
+  }
+
 
   if (!token) {
     return <Redirect href="/login" />;
@@ -82,21 +68,24 @@ export default function Home() {
       <Text>Home</Text>
       <Text>User: {getUsername()}</Text>
       <Text>Backend: {getBaseUrl()}</Text>
+      <View style={{ flex: 1, flexDirection: "row", gap: 12 }}>
+        <ConnectionWindow
+          users={users}
+          userStatus={userStatus}
+          onConnect={connectToUser}
+        /> 
 
-      <ConnectionWindow
-        users={users}
-        userStatus={userStatus}
-        onCheckStatus={checkStatus}
-        onConnect={connectToUser}
-      />
+     
 
-      <Button
-        title="Logout"
-        onPress={() => {
-          clearAuth();
-          router.replace("/login");
-        }}
-      />
+        <MainPanel
+          visible={!!incomingCall}
+          callerName={incomingCall?.callerName ?? ""}
+          callId={incomingCall?.callId ?? ""}
+          onAccept={acceptIncomingCall}
+          onDecline={declineIncomingCall}
+        />
+      </View>
+
     </View>
   );
 }

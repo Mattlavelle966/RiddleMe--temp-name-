@@ -2,13 +2,8 @@ const { getPeer, getPeers } = require('../peers/peers');
 const { createTransport, getRouter } = require('../mediasoup/mediasoup');
 const { randomUUID } = require("crypto");
 const { getSocketIdByUserId } = require("./socketBindings");
-const {
-  joinCall,
-  leaveCall,
-  getCallIdBySocketId,
-  getSocketIdsByCallId,
-} = require("./callBindings");
-
+const {joinCall,leaveCall,getCallIdBySocketId,getSocketIdsByCallId,} = require("./callBindings");
+const {createPendingCall,getPendingCall,removePendingCall,} = require("./pendingCalls");
 
 
 
@@ -21,6 +16,8 @@ function registerSocketHandlers(socket, io) {
     
   socket.on("connectToUser", ({ targetUserId }, callback) => {
     console.log("connectToUser hit", targetUserId);
+    const targetSocketId = getSocketIdByUserId(targetUserId);
+    console.log("targetSocketId resolved:", targetSocketId);
     try {
       const targetSocketId = getSocketIdByUserId(targetUserId);
 
@@ -30,19 +27,90 @@ function registerSocketHandlers(socket, io) {
 
       const callId = randomUUID();
 
-      joinCall(socket.id, callId);
-      joinCall(targetSocketId, callId);
+      createPendingCall(callId, socket.id, targetSocketId, {
+        userId: socket.user.userId,
+        username: socket.user.username,
+      });
 
-      socket.join(`call:${callId}`);
       const targetSocket = io.sockets.sockets.get(targetSocketId);
+      console.log("targetSocket exists:", !!targetSocket);
       if (targetSocket) {
-        targetSocket.join(`call:${callId}`);
+        console.log("emitting incomingCall to target socket", targetSocketId);
+        targetSocket.emit("incomingCall", {
+          callId,
+          callerId: socket.user.userId,
+          callerName: socket.user.username,
+        });
+        console.log("incomingCall emitted", {
+          callId,
+          callerId: socket.user.userId,
+          callerName: socket.user.username,
+        });
       }
 
       callback({ ok: true, callId });
     } catch (error) {
       callback({ error: error.message });
     }
+  });
+  
+  
+  //acceptCall
+  socket.on("acceptCall", ({ callId }, callback) => {
+    const pendingCall = getPendingCall(callId);
+
+    if (!pendingCall) {
+      return callback({ ok: false, error: "call not found" });
+    }
+
+    if (pendingCall.targetSocketId !== socket.id) {
+      return callback({ ok: false, error: "not your call" });
+    }
+
+    const callerSocket = io.sockets.sockets.get(pendingCall.callerSocketId);
+    const targetSocket = io.sockets.sockets.get(pendingCall.targetSocketId);
+
+    if (!callerSocket || !targetSocket) {
+      removePendingCall(callId);
+      return callback({ ok: false, error: "caller or target disconnected" });
+    }
+
+    joinCall(pendingCall.callerSocketId, callId);
+    joinCall(pendingCall.targetSocketId, callId);
+
+    callerSocket.join(`call:${callId}`);
+    targetSocket.join(`call:${callId}`);
+
+    callerSocket.emit("callAccepted", { callId });
+    targetSocket.emit("callAccepted", { callId });
+
+    removePendingCall(callId);
+
+    callback({ ok: true, callId });
+  });
+  
+
+  //DeclineCall
+  socket.on("declineCall", ({ callId }, callback) => {
+    const pendingCall = getPendingCall(callId);
+
+    if (!pendingCall) {
+      return callback({ ok: false, error: "call not found" });
+    }
+
+    if (pendingCall.targetSocketId !== socket.id) {
+      return callback({ ok: false, error: "not your call" });
+    }
+
+    const callerSocket = io.sockets.sockets.get(pendingCall.callerSocketId);
+
+    if (callerSocket) {
+      callerSocket.emit("callDeclined", { callId });
+    }
+
+    removePendingCall(callId);
+
+    callback({ ok: true });
   });
 
   socket.on('getRouterRtpCapabilities', (_data, callback) => {

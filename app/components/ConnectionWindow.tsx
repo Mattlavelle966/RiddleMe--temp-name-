@@ -8,13 +8,18 @@ type UserItem = {
 type Props = {
   users: UserItem[];
   userStatus: Record<string, string>;
-  onCheckStatus: (userId: string) => void;
   onConnect: (userId: string) => void;
 };
 
-export default function ConnectionWindow({ users,userStatus,onCheckStatus,onConnect,}: Props) {
+export default function ConnectionWindow({ users,userStatus,onConnect,}: Props) {
   return (
-    <View style={{ marginTop: 20, gap: 8 }}>
+    <View style={{ 
+    width: "20%",
+    minWidth: 220,
+    borderRightWidth: 1,
+    paddingRight: 12,
+    gap: 8,
+    }}>
       <Text>Users</Text>
 
       {users.map((user) => {
@@ -44,11 +49,6 @@ export default function ConnectionWindow({ users,userStatus,onCheckStatus,onConn
               />
               <Text>{status}</Text>
             </View>
-
-            <Button
-              title="Check Status"
-              onPress={() => onCheckStatus(user.id)}
-            />
 
             <Button
               title="Connect"
