@@ -1,6 +1,6 @@
 # dependencies
 server/node_modules/
-testclient/node_modules/
+app/node_modules/
 #
 *.db
 

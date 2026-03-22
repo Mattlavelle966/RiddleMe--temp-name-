@@ -1,5 +1,11 @@
 const { getPeer, getPeers } = require('../peers/peers');
 const { createTransport, getRouter } = require('../mediasoup/mediasoup');
+const { randomUUID } = require("crypto");
+const { getSocketIdByUserId } = require("./socketBindings");
+const {joinCall,leaveCall,getCallIdBySocketId,getSocketIdsByCallId,} = require("./callBindings");
+const {createPendingCall,getPendingCall,removePendingCall,} = require("./pendingCalls");
+
+
 
 function registerSocketHandlers(socket, io) {
   // Fires every time a browser/client connects through Socket.io
@@ -7,6 +13,105 @@ function registerSocketHandlers(socket, io) {
 
   // Get or create the server-side peer record for this socket
   const peer = getPeer(socket.id);
+    
+  socket.on("connectToUser", ({ targetUserId }, callback) => {
+    console.log("connectToUser hit", targetUserId);
+    const targetSocketId = getSocketIdByUserId(targetUserId);
+    console.log("targetSocketId resolved:", targetSocketId);
+    try {
+      const targetSocketId = getSocketIdByUserId(targetUserId);
+
+      if (!targetSocketId) {
+        return callback({ error: "target user is offline" });
+      }
+
+      const callId = randomUUID();
+
+      createPendingCall(callId, socket.id, targetSocketId, {
+        userId: socket.user.userId,
+        username: socket.user.username,
+      });
+
+      const targetSocket = io.sockets.sockets.get(targetSocketId);
+      console.log("targetSocket exists:", !!targetSocket);
+      if (targetSocket) {
+        console.log("emitting incomingCall to target socket", targetSocketId);
+        targetSocket.emit("incomingCall", {
+          callId,
+          callerId: socket.user.userId,
+          callerName: socket.user.username,
+        });
+        console.log("incomingCall emitted", {
+          callId,
+          callerId: socket.user.userId,
+          callerName: socket.user.username,
+        });
+      }
+
+      callback({ ok: true, callId });
+    } catch (error) {
+      callback({ error: error.message });
+    }
+  });
+  
+  
+  //acceptCall
+  socket.on("acceptCall", ({ callId }, callback) => {
+    const pendingCall = getPendingCall(callId);
+
+    if (!pendingCall) {
+      return callback({ ok: false, error: "call not found" });
+    }
+
+    if (pendingCall.targetSocketId !== socket.id) {
+      return callback({ ok: false, error: "not your call" });
+    }
+
+    const callerSocket = io.sockets.sockets.get(pendingCall.callerSocketId);
+    const targetSocket = io.sockets.sockets.get(pendingCall.targetSocketId);
+
+    if (!callerSocket || !targetSocket) {
+      removePendingCall(callId);
+      return callback({ ok: false, error: "caller or target disconnected" });
+    }
+
+    joinCall(pendingCall.callerSocketId, callId);
+    joinCall(pendingCall.targetSocketId, callId);
+
+    callerSocket.join(`call:${callId}`);
+    targetSocket.join(`call:${callId}`);
+
+    callerSocket.emit("callAccepted", { callId });
+    targetSocket.emit("callAccepted", { callId });
+
+    removePendingCall(callId);
+
+    callback({ ok: true, callId });
+  });
+  
+
+  //DeclineCall
+  socket.on("declineCall", ({ callId }, callback) => {
+    const pendingCall = getPendingCall(callId);
+
+    if (!pendingCall) {
+      return callback({ ok: false, error: "call not found" });
+    }
+
+    if (pendingCall.targetSocketId !== socket.id) {
+      return callback({ ok: false, error: "not your call" });
+    }
+
+    const callerSocket = io.sockets.sockets.get(pendingCall.callerSocketId);
+
+    if (callerSocket) {
+      callerSocket.emit("callDeclined", { callId });
+    }
+
+    removePendingCall(callId);
+
+    callback({ ok: true });
+  });
 
   socket.on('getRouterRtpCapabilities', (_data, callback) => {
     // Client asks what codecs/capabilities the mediasoup router supports
@@ -94,10 +199,14 @@ function registerSocketHandlers(socket, io) {
       // Notify every other connected client that a new producer now exists
       // They can then choose to consume it
       console.log("Telling peers there is a new producer to listen to");
-      socket.broadcast.emit('newProducer', {
-        producerId: producer.id,
-        socketId: socket.id
-      }); 
+      const callId = getCallIdBySocketId(socket.id);
+      if (callId) {
+        socket.to(`call:${callId}`).emit("newProducer", {
+          producerId: producer.id,
+          socketId: socket.id,
+          callId
+        });
+      }
   
       // Return the producer id to the client that created it
      callback({ id: producer.id });  
@@ -105,31 +214,31 @@ function registerSocketHandlers(socket, io) {
      callback({ error: error.message });  
     }  
   });  
-  
-  socket.on('getProducers', (_data, callback) => {
-    // Client asks for all currently existing producers from all OTHER peers
-    // This is how a newly joined client discovers already-active remote audio streams
+    
+  socket.on("getProducers", (_data, callback) => {
     const producerIds = [];
     const peers = getPeers();
-    
+    const callId = getCallIdBySocketId(socket.id);
 
-    console.log("searching for peers");
-    for (const [otherSocketId, otherPeer] of peers.entries()) {
-      // Skip this client's own producers
-      if (otherSocketId === socket.id){
-        console.log(`Id Match!! skipping current socket expected:${socket.id}, found:${otherSocketId}`);
-        continue;
-      };
-  
-      // Add every producer id from the other peer
+    if (!callId) {
+      return callback([]);
+    }
+
+    const socketIds = getSocketIdsByCallId(callId);
+
+    for (const otherSocketId of socketIds) {
+      if (otherSocketId === socket.id) continue;
+
+      const otherPeer = peers.get(otherSocketId);
+      if (!otherPeer) continue;
+
       for (const producer of otherPeer.producers.values()) {
-        console.log("adding found producers to producer list");
         producerIds.push(producer.id);
-      }  
-    }  
-    console.log(`sending socket:${socket.id} latest producer list`);
+      }
+    }
+
     callback(producerIds);
-  }); 
+  });
  
   socket.on('consume', async ({ transportId, producerId, rtpCapabilities }, callback) => {
     try {
@@ -208,6 +317,8 @@ function registerSocketHandlers(socket, io) {
       // Close all transports for this peer
       for (const transport of currentPeer.transports.values()) transport.close();
 
+
+      leaveCall(socket.id);
       // Remove the peer entirely from the peers map
       peers.delete(socket.id);
     }
