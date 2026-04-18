@@ -70,8 +70,8 @@ usersRouter.post("/login", async (req,res) => {
     JWT_SECRET,
     {expiresIn: "24h"}
   )
-
-
+  //REMOVE LATER
+  console.log("Token:", token);
   res.json({token});
 
 });
