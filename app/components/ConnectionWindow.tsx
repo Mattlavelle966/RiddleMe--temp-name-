@@ -1,4 +1,5 @@
-import { View, Text, Button } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 type UserItem = {
   id: string;
@@ -9,9 +10,10 @@ type Props = {
   users: UserItem[];
   userStatus: Record<string, string>;
   onConnect: (userId: string) => void;
+  onMessage: (user: UserItem) => void;
 };
 
-export default function ConnectionWindow({ users,userStatus,onConnect,}: Props) {
+export default function ConnectionWindow({ users,userStatus,onConnect,onMessage}: Props) {
   return (
     <View style={{ 
     width: "20%",
@@ -49,11 +51,16 @@ export default function ConnectionWindow({ users,userStatus,onConnect,}: Props) 
               />
               <Text>{status}</Text>
             </View>
-
-            <Button
-              title="Connect"
-              onPress={() => onConnect(user.id)}
-            />
+            <View style={{ flexDirection: "row" }}>
+              <TouchableOpacity onPress={() => onConnect(user.id)}>
+                <Ionicons name="call-outline" size={24} color="blue" />
+              </TouchableOpacity>
+              {/*Make a function that should create a converstation if it doesn't
+                already exist, then connect to it, and display messages */}
+              <TouchableOpacity onPress={() => onMessage(user)}>
+                <Ionicons name="chatbubble-outline" size={24} color="green" />
+              </TouchableOpacity>
+            </View>
           </View>
         );
       })}

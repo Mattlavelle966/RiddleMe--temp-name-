@@ -33,3 +33,72 @@ export async function getUsers() {
 export async function getMe() {
   return api("/api/me");
 }
+
+export async function createConversation(type: string = "dm") {
+  const token = getToken();
+  const baseUrl = getBaseUrl();
+
+  const res = await fetch(`${baseUrl}/api/conversations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ type }),
+  });
+
+  if (!res.ok) {
+    throw new Error("failed to create conversation");
+  }
+
+  return await res.json();
+}
+
+export async function getMessages(conversationId: string) {
+  const token = getToken();
+  const baseUrl = getBaseUrl();
+
+  const res = await fetch(`${baseUrl}/api/messages/${conversationId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("failed to fetch messages");
+  }
+
+  return await res.json();
+}
+
+export async function sendMessage(conversationId: string, body: string) {
+  const token = getToken();
+  const baseUrl = getBaseUrl();
+
+  const res = await fetch(`${baseUrl}/api/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      conversationId,
+      body,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error("failed to send message");
+  }
+
+  return await res.json();
+}
+
+async function messageUser(userId: string) {
+  try {
+    const data = await createConversation("dm");
+    router.push(`/messages/${data.conversation.id}`);
+  } catch (err) {
+    console.log("failed to open message screen", err);
+  }
+}

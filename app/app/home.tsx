@@ -23,6 +23,8 @@ export default function Home() {
   const [users, setUsers] = useState([]);
   const [userStatus, setUserStatus] = useState<Record<string, string>>({});
   const { incomingCall, showIncomingCall, clearIncomingCall } = useIncomingCall();
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeChatUser, setActiveChatUser] = useState<{ id: string; username: string } | null>(null);
 
   useUserStatusPolling(users, token, setUserStatus);
   useCallEvents(token, showIncomingCall, clearIncomingCall, setUsers, getUsers);
@@ -58,6 +60,17 @@ export default function Home() {
     clearIncomingCall();
   }
 
+  async function openChat(user: { id: string; username: string }) {
+    try {
+      console.log("entering openChat");
+      const data = await createConversation("dm");
+      setActiveConversationId(data.conversation.id);
+      setActiveChatUser(user);
+    } catch (err) {
+      console.log("failed to open chat", err);
+    }
+  }
+
 
   if (!token) {
     return <Redirect href="/login" />;
@@ -73,6 +86,7 @@ export default function Home() {
           users={users}
           userStatus={userStatus}
           onConnect={connectToUser}
+          onMessage={openChat}
         /> 
 
      
@@ -83,6 +97,8 @@ export default function Home() {
           callId={incomingCall?.callId ?? ""}
           onAccept={acceptIncomingCall}
           onDecline={declineIncomingCall}
+          activeConversationId={activeConversationId}
+          activeChatUser={activeChatUser}
         />
       </View>
 

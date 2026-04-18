@@ -2,7 +2,12 @@ import { View, Text, Button } from "react-native";
 import { clearAuth } from "../store/auth";
 import { router } from "expo-router";
 import IncomingCallPopup from "./IncomingCallPopup";
+import ChatWindow from "./ChatWindow";
 
+type ChatUser = {
+  id: string;
+  username: string;
+};
 
 type Props = {
   visible: boolean;
@@ -10,9 +15,20 @@ type Props = {
   callId: string;
   onAccept: () => void;
   onDecline: () => void;
+
+  activeConversationId: string | null;
+  activeChatUser: ChatUser | null;
 };
 
-export default function MainPanel({ visible, callerName, callId, onAccept, onDecline,}: Props) {
+export default function MainPanel({
+  visible, 
+  callerName, 
+  callId, 
+  onAccept, 
+  onDecline, 
+  activeConversationId, 
+  activeChatUser
+}: Props) {
   return (
     <View
       style={{
@@ -47,8 +63,10 @@ export default function MainPanel({ visible, callerName, callId, onAccept, onDec
           padding: 12,
         }}
       >
-        <Text>Main Call / Chat Area</Text>
-        <Text>Active call UI and chat will go here.</Text>
+        <ChatWindow
+          conversationId={activeConversationId}
+          activeUser={activeChatUser}
+        />
       </View>
 
       <Button
