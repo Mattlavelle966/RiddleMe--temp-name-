@@ -15,7 +15,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL,
-    serverId INTEGER,
+    server_id TEXT,
     name TEXT,
     created_at INTEGER NOT NULL
   );
@@ -28,6 +28,14 @@ sqlite.exec(`
     created_at INTEGER NOT NULL,
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS conversation_members (
+    conversation_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    PRIMARY KEY (conversation_id, user_id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 `);
 
