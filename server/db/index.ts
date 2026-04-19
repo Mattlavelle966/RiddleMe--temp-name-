@@ -15,7 +15,7 @@ sqlite.exec(`
   CREATE TABLE IF NOT EXISTS conversations (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL,
-    server_id TEXT,
+    serverId INTEGER,
     name TEXT,
     created_at INTEGER NOT NULL
   );

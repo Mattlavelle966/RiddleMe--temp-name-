@@ -43,7 +43,7 @@ conversationsRouter.post("/conversations", auth, async (req, res) => {
       type: "dm",
       serverId: null,
       name: typeof name === "string" && name.trim() ? name.trim() : null,
-      createdAt: Date.now(),
+      createdAt: new Date(),
     };
 
     await db.insert(conversations).values(conversation);

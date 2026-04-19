@@ -1,5 +1,3 @@
-
-
 import {sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
 
 
@@ -20,7 +18,7 @@ export const messages = sqliteTable("messages", {
 export const conversations = sqliteTable("conversations", {
   id: text("id").primaryKey(),
   type: text("type").notNull(), // dm | group | channel
-  serverId: text("server_id"),
+  serverId: text("serverId"),
   name: text("name"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
