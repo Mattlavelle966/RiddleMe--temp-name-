@@ -39,7 +39,7 @@ messagesRouter.post("/messages", auth, async (req, res) => {
       conversationId,
       senderId: sender.userId,
       body: body.trim(),
-      createdAt: Date.now(),
+      createdAt: new Date(),
     };
 
     await db.insert(messages).values(message);
