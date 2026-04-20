@@ -3,6 +3,7 @@ import { clearAuth } from "../store/auth";
 import { router } from "expo-router";
 import IncomingCallPopup from "./IncomingCallPopup";
 import ChatWindow from "./ChatWindow";
+import { darkmode } from "../assets/styles"
 
 type ChatUser = {
   id: string;
@@ -15,9 +16,10 @@ type Props = {
   callId: string;
   onAccept: () => void;
   onDecline: () => void;
-
+  isOpen: boolean;
   activeConversationId: string | null;
   activeChatUser: ChatUser | null;
+  onMenuToggle: () => void;
 };
 
 export default function MainPanel({
@@ -25,20 +27,15 @@ export default function MainPanel({
   callerName, 
   callId, 
   onAccept, 
-  onDecline, 
+  onDecline,
+  isOpen,
   activeConversationId, 
-  activeChatUser
+  activeChatUser,
+  onMenuToggle
 }: Props) {
   return (
-    <View
-      style={{
-        flex: 1,
-        borderWidth: 1,
-        padding: 12,
-        gap: 12,
-      }}
-    >
-      <View
+    <View>
+      {/* <View
         style={{
           borderWidth: 1,
           padding: 12,
@@ -54,28 +51,15 @@ export default function MainPanel({
           onDecline={onDecline}
         />
 
-      </View>
+      </View> */}
 
-      <View
-        style={{
-          flex: 1,
-          borderWidth: 1,
-          padding: 12,
-        }}
-      >
-        <ChatWindow
-          conversationId={activeConversationId}
-          activeUser={activeChatUser}
-        />
-      </View>
-
-      <Button
-        title="Logout"
-        onPress={() => {
-          clearAuth();
-          router.replace("/login");
-        }}
+      <ChatWindow 
+        conversationId={activeConversationId} 
+        activeUser={activeChatUser} 
+        onMenuToggle={onMenuToggle}
+        isOpen={isOpen}
       />
+
     </View>
   );
 }
