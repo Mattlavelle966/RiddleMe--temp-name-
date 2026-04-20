@@ -72,7 +72,8 @@ export const darkmode = StyleSheet.create({
 	messageInputField: {
 		backgroundColor: Dark.background,
 		color: '#fff',
-		width: '100%'
+		width: '100%',
+		zIndex: 999
 	},
 	sendButton: {
 		position: 'absolute',
@@ -81,7 +82,7 @@ export const darkmode = StyleSheet.create({
 		backgroundColor: Dark.success,
 		borderRadius: 50,
 		padding: 5,
-		zIndex: 997
+		zIndex: 999
 	},
 	messageIn: {
 		backgroundColor: Dark.secondary,

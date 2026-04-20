@@ -26,7 +26,7 @@ type Props = {
 export default function ConnectionWindow({ users,userStatus,isOpen,activeUser,onConnect,onMessage,toggleMenu}: Props) {
   return (
     <View style={[darkmode.connectionCard, !isOpen && {height:"100%"}]}>
-      <View style={{width:"40%"}}>
+      <View style={[!isOpen && {width:"40%"}, isOpen && {width:"0%"}]}>
         <TouchableOpacity onPress={() => toggleMenu()} 
         style={[{position:"absolute", zIndex:999}, !isOpen && {right: 10, top: 10}, (activeUser && isOpen) && {display:"none"}]}
         >
@@ -81,7 +81,7 @@ export default function ConnectionWindow({ users,userStatus,isOpen,activeUser,on
         </LinearGradient>
         
       </View>
-      <View style={{width:"60%"}}>
+      <View style={[!isOpen && {width:"60%"}, isOpen && {width:"0%"}]}>
         <LinearGradient 
           colors={['rgba(28, 32, 32, 1)', 'rgba(48, 54, 54, 0.5)']}
           start={{ x: 0, y: 0.5 }}
