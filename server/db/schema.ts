@@ -1,6 +1,4 @@
-
-
-import {sqliteTable, text, integer } from "drizzle-orm/sqlite-core"
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core"
 
 
 export const users = sqliteTable("users", {
@@ -24,3 +22,18 @@ export const conversations = sqliteTable("conversations", {
   name: text("name"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
+
+export const conversationMembers = sqliteTable(
+  "conversation_members", 
+  {
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversations.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.conversationId, table.userId] }),
+  })
+);

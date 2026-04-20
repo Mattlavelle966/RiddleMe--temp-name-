@@ -7,7 +7,7 @@ import { getBaseUrl } from "../store/connection";
 import { useState } from "react";
 import { requestCall, acceptIncomingCallSession, declineIncomingCallSession,} from "../lib/callSessions";
 import ConnectionWindow from "../components/ConnectionWindow";
-import { getUsers, getUserStatus } from "../lib/api";
+import { getUsers, getUserStatus, createConversation } from "../lib/api";
 
 import { useUserStatusPolling } from "../hooks/useUserStatusPolling";
 import MainPanel from "../components/MainPanel";
@@ -61,13 +61,16 @@ export default function Home() {
   }
 
   async function openChat(user: { id: string; username: string }) {
+    setActiveChatUser(user);
+    setActiveConversationId(null);
+
     try {
-      console.log("entering openChat");
-      const data = await createConversation("dm");
+      console.log("creating dm for", user.id, user.username);
+      const data = await createConversation("dm", user.id);
+      console.log("conversation created", data);
       setActiveConversationId(data.conversation.id);
-      setActiveChatUser(user);
     } catch (err) {
-      console.log("failed to open chat", err);
+      console.log("failed to create conversation", err);
     }
   }
 
