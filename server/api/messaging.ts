@@ -44,6 +44,15 @@ messagesRouter.post("/messages", auth, async (req, res) => {
 
     await db.insert(messages).values(message);
 
+	const io = req.app.get('io'); 
+    if (io) {
+      const room = String(conversationId);
+      io.to(room).emit("messageCreated", { message }); 
+      console.log(`Broadcasted new message to room: ${room}`);
+    } else {
+      console.warn("Socket.io instance not found on req.app");
+    }
+
     return res.status(201).json({ message });
   } catch (err) {
     console.error("create message error:", err);

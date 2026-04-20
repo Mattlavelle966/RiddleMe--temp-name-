@@ -27,6 +27,7 @@ app.use(express.json());
 app.use('/api', usersRouter);
 app.use('/api', conversationsRouter);
 app.use('/api', messagesRouter);
+app.set('io', io);
 
 // Serve everything in ../testclient as static files
 // So opening localhost:3000 will load the browser client from that folder

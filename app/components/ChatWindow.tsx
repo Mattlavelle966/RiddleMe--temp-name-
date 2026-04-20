@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-nativ
 import { darkmode } from "@/assets/styles";
 import { Ionicons } from "@expo/vector-icons";
 import { getMessages, sendMessage } from "../lib/api";
+import { getSocket } from "../lib/socket"; 
 import { ChatWindowProps, Message } from "../types";
 
 export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuToggle, isDesktop }: ChatWindowProps) {
@@ -30,6 +31,37 @@ export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuT
   }
 
   useEffect(() => { loadMessages(); }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const socket = getSocket(); 
+    if (!socket) {
+      return;
+    }
+
+    socket.emit("joinConversation", { conversationId });
+
+    const handleMessageCreated = ({ message }: { message: Message }) => {
+
+      if (String(message.conversationId) !== String(conversationId)) {
+        return;
+      }
+
+      setMessages((prev) => {
+        const alreadyExists = prev.some((msg) => String(msg.id) === String(message.id));
+        if (alreadyExists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    socket.on("messageCreated", handleMessageCreated);
+
+    return () => {
+      socket.off("messageCreated", handleMessageCreated);
+      socket.emit("leaveConversation", { conversationId });
+    };
+  }, [conversationId]);
 
   if (!conversationId || !activeUser) {
     return (
@@ -67,8 +99,12 @@ export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuT
 
       </LinearGradient>
 
-      <View style={darkmode.w100}>
-        <ScrollView style={darkmode.chatScroll} contentContainerStyle={{ gap: 8 }}>
+      <View style={[darkmode.w100, { flex: 1, display: 'flex', flexDirection: 'column' }]}>
+        
+        <ScrollView 
+          style={[darkmode.chatScroll, { flex: 1 }]} 
+          contentContainerStyle={{ gap: 8, paddingBottom: 15 }}
+        >
           {loading ? (<Text style={darkmode.label}>Loading...</Text>) : messages.length === 0 ? (<Text style={darkmode.label}>No messages yet</Text>) 
           : (
             messages.map((message) => (

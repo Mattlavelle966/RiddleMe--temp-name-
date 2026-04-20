@@ -325,6 +325,18 @@ function registerSocketHandlers(socket, io) {
 
     console.log('disconnected:', socket.id);
   });
+
+  socket.on("joinConversation", ({ conversationId }) => {
+    const room = String(conversationId);
+    socket.join(room);
+    console.log(`Socket ${socket.id} joined chat room: ${room}`);
+  });
+
+  socket.on("leaveConversation", ({ conversationId }) => {
+    const room = String(conversationId);
+    socket.leave(room);
+    console.log(`Socket ${socket.id} left chat room: ${room}`);
+  });
 }
 
 module.exports = registerSocketHandlers;
