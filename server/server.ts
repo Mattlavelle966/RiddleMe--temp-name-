@@ -8,9 +8,15 @@ const { conversationsRouter } = require("./api/conversations");
 const app = express();                       // Create the Express app
 const server = http.createServer(app);       // Wrap Express in a raw HTTP server
 const cors = require("cors");
+
+const allowedOrigins = [
+  "http://localhost:8081",
+  "http://192.168.40.54:8081",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:8081",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
 });
