@@ -1,4 +1,4 @@
-import { useEffect, useState,  } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
 } from "react-native";
 
 import { getMessages, sendMessage } from "../lib/api";
-import { getUserId } from "../store/auth";
+import { getSocket } from "../lib/socket";
 
 type ChatUser = {
   id: string;
@@ -35,6 +35,7 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
+
   const myUserId = null;
 
   async function loadMessages() {
@@ -55,14 +56,18 @@ export default function ChatWindow({
   }
 
   async function handleSend() {
-    if (!conversationId || !draft.trim()) {
-      return;
-    }
+    if (!conversationId) return;
+    if (!draft.trim()) return;
 
     try {
-      await sendMessage(conversationId, draft.trim());
+      const data = await sendMessage(conversationId, draft.trim());
       setDraft("");
-      await loadMessages();
+
+      setMessages((prev) => {
+        const alreadyExists = prev.some((msg) => msg.id === data.message.id);
+        if (alreadyExists) return prev;
+        return [...prev, data.message];
+      });
     } catch (err) {
       console.log("failed to send message", err);
     }
@@ -72,102 +77,109 @@ export default function ChatWindow({
     loadMessages();
   }, [conversationId]);
 
-  if (!conversationId || !activeUser) {
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit("joinConversation", { conversationId });
+
+    return () => {
+      socket.emit("leaveConversation", { conversationId });
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleMessageCreated = ({ message }: { message: Message }) => {
+      if (message.conversationId !== conversationId) {
+        return;
+      }
+
+      setMessages((prev) => {
+        const alreadyExists = prev.some((msg) => msg.id === message.id);
+        if (alreadyExists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    socket.on("messageCreated", handleMessageCreated);
+
+    return () => {
+      socket.off("messageCreated", handleMessageCreated);
+    };
+  }, [conversationId]);
+
+  if (!activeUser) {
     return (
-      <View
-        style={{
-          flex: 1,
-          borderWidth: 1,
-          borderRadius: 8,
-          padding: 16,
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
+      <View style={{ flex: 1, padding: 16 }}>
         <Text>No chat selected</Text>
       </View>
     );
   }
 
   return (
-    <View
-      style={{
-        flex: 1,
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 12,
-        gap: 12,
-      }}
-    >
-      <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+    <View style={{ flex: 1, padding: 16 }}>
+      <Text style={{ fontWeight: "bold", marginBottom: 12 }}>
         Chat with {activeUser.username}
       </Text>
 
-      <ScrollView
-        style={{
-          flex: 1,
-          borderWidth: 1,
-          borderRadius: 8,
-          padding: 10,
-        }}
-        contentContainerStyle={{ gap: 8 }}
-      >
-        {loading ? (
-          <Text>Loading...</Text>
-        ) : messages.length === 0 ? (
-          <Text>No messages yet</Text>
-        ) : (
-          messages.map((message) => {
+      {loading ? (
+        <Text>Loading messages...</Text>
+      ) : (
+        <ScrollView style={{ flex: 1, marginBottom: 12 }}>
+          {messages.map((message) => {
+            const isMine = message.senderId === myUserId;
+
             return (
               <View
                 key={message.id}
                 style={{
-                  maxWidth: "80%",
-                  borderWidth: 1,
-                  borderRadius: 8,
+                  alignSelf: isMine ? "flex-end" : "flex-start",
+                  backgroundColor: "#e5e5e5",
                   padding: 10,
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  maxWidth: "80%",
                 }}
               >
-                <Text
-                  style={{
-                    fontSize: 12,
-                    marginBottom: 4,
-                    fontWeight: "600",
-                  }}
-                >
-                </Text>
-
                 <Text>{message.body}</Text>
               </View>
             );
-          })
-        )}
-      </ScrollView>
+          })}
+        </ScrollView>
+      )}
 
-      <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+      <View style={{ flexDirection: "row", gap: 8 }}>
         <TextInput
           value={draft}
           onChangeText={setDraft}
-          placeholder="Type a message"
+          placeholder="Type a message..."
           style={{
             flex: 1,
             borderWidth: 1,
+            borderColor: "#ccc",
             borderRadius: 8,
             paddingHorizontal: 12,
-            paddingVertical: 10,
+            paddingVertical: 8,
           }}
         />
 
         <TouchableOpacity
           onPress={handleSend}
           style={{
-            borderWidth: 1,
-            borderRadius: 8,
+            backgroundColor: "#007AFF",
             paddingHorizontal: 16,
-            paddingVertical: 10,
+            justifyContent: "center",
+            borderRadius: 8,
           }}
         >
-          <Text style={{ fontWeight: "bold" }}>Send</Text>
+          <Text style={{ color: "white", fontWeight: "bold" }}>Send</Text>
         </TouchableOpacity>
       </View>
     </View>

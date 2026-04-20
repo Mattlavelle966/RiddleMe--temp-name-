@@ -13,7 +13,10 @@ const io = new Server(server, {
     origin: "http://localhost:8081",
     methods: ["GET", "POST"],
   },
-});               
+});
+
+app.set("io", io);
+
 const { socketAuth } = require("./sockets/socketAuth");
 const { bindUserToSocket, unbindSocket } = require("./sockets/socketBindings");
 
@@ -45,6 +48,15 @@ io.on('connection', (socket) => {
     console.log(`socket disconnected ${socket.id}`);
   });
 
+  socket.on("joinConversation", ({ conversationId }) => {
+    console.log("join conversation", conversationId, socket.id);
+    socket.join(conversationId);
+  });
+
+  socket.on("leaveConversation", ({ conversationId }) => {
+    console.log("leave conversation", conversationId, socket.id);
+    socket.leave(conversationId);
+  });
 
   registerSocketHandlers(socket, io);
 });
