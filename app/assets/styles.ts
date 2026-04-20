@@ -121,7 +121,7 @@ export const darkmode = StyleSheet.create({
 		alignItems: "center",
 		marginLeft: 'auto',
 		marginRight: 'auto',
-		padding: 5
+		padding: 5,
 	},
 	logoutTile: {
 		display: "flex",
@@ -132,7 +132,9 @@ export const darkmode = StyleSheet.create({
 		marginLeft: "auto",
 		marginRight: "auto",
 		borderRadius: 5,
-		padding: 10
+		padding: 10,
+		boxShadow: '2 2 7 0',
+		shadowColor: '#0000001a',
 	},
 	buttonSuccess: {
 		display: 'flex',

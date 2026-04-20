@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Button } from "react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import { createConversation } from "../lib/api";
 import {  getToken, getUsername } from "../store/auth";
+import { getBaseUrl } from "../store/connection";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { clearAuth } from "../store/auth";
@@ -36,7 +37,7 @@ export default function ConnectionWindow({ users,userStatus,isOpen,activeUser,on
           colors={['rgba(60, 91, 100, 1)', 'rgba(60, 91, 100, 0)']}
           style={[darkmode.connectionWindow, isOpen && {display:"none"}, {height:"100%"}]}
           >
-          <View style={{display:"flex", height:"100%", justifyContent: "space-between", paddingBottom: 10}}>
+          <View style={{display:"flex", height:"100%", justifyContent: "space-between", paddingBottom: 40}}>
             <View>
               {users.map((user) => {
                 const status = userStatus[user.id] || "unknown";
