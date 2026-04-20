@@ -18,23 +18,17 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
-
       setAuth(data.token, username);
       router.replace("/home");
-    } catch (err: any) {
-      setError(err.message);
-    }
+    } catch (err: any) { setError(err.message); }
   }
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20, gap: 12 }}>
-      <View style={[
-        darkmode.well,
-        {display: "flex", height: 400, justifyContent: 'space-between'}
-        ]}>
+    <View style={darkmode.screenContainer}>
+      <View style={[darkmode.well, darkmode.authWell]}>
         <View>
           <Text style={darkmode.header}>Log in</Text>
-          <View style={{display: "flex", flexDirection: "row"}}>
+          <View style={darkmode.row}>
             <Text style={darkmode.subHeader}>Or register for an </Text>
             <Link style={darkmode.link} href="/register">account.</Link>
           </View>
@@ -42,36 +36,21 @@ export default function Login() {
         <View>
           <View>
             <Text style={darkmode.label}>Username</Text>
-            <TextInput
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              style={darkmode.textInput}
-            />
+            <TextInput value={username} onChangeText={setUsername} autoCapitalize="none" style={darkmode.textInput} />
           </View>
-          <View style={{marginTop: 30}}>
-            <View style={{display: "flex", flexDirection: "row"}}>
+          <View style={darkmode.mt30}>
+            <View style={darkmode.row}>
               <Text style={darkmode.label}>Password</Text>
-              <Text style={[darkmode.link, {marginLeft: 'auto'}]} onPress={() => hide(!hidePassword)}>Show</Text>
+              <Text style={darkmode.linkRight} onPress={() => hide(!hidePassword)}>Show</Text>
             </View>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={hidePassword}
-              style={darkmode.textInput}
-            />
+            <TextInput value={password} onChangeText={setPassword} secureTextEntry={hidePassword} style={darkmode.textInput} />
             {!!error && <Text style={darkmode.error}>{error}</Text>}
-
           </View>
         </View>
-        <TouchableOpacity 
-          onPress={submit} 
-          style={[darkmode.buttonSuccess, {width: "100%", marginTop: 10}]}
-        > 
+        <TouchableOpacity onPress={submit} style={darkmode.buttonSuccessFull}> 
           <Text style={darkmode.label}>Log in</Text>
         </TouchableOpacity>
-
-        <Link style={[darkmode.link, {marginLeft: "auto", marginRight: "auto"}]} href="/connect">Change backend URL</Link>
+        <Link style={[darkmode.link, darkmode.autoMargin]} href="/connect">Change backend URL</Link>
       </View>
     </View>
   );
