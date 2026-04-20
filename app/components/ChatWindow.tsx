@@ -24,7 +24,7 @@ export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuT
   async function handleSend() {
     if (!conversationId || !draft.trim()) return;
     try {
-      await sendMessage(conversationId, draft.trim());
+      const data = await sendMessage(conversationId, draft.trim());
       setDraft("");
       await loadMessages();
     } catch (err) {}

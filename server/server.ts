@@ -8,12 +8,21 @@ const { conversationsRouter } = require("./api/conversations");
 const app = express();                       // Create the Express app
 const server = http.createServer(app);       // Wrap Express in a raw HTTP server
 const cors = require("cors");
+
+const allowedOrigins = [
+  "http://localhost:8081",
+  "http://192.168.40.54:8081",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:8081",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
   },
-});               
+});
+
+app.set("io", io);
+
 const { socketAuth } = require("./sockets/socketAuth");
 const { bindUserToSocket, unbindSocket } = require("./sockets/socketBindings");
 
@@ -46,6 +55,15 @@ io.on('connection', (socket) => {
     console.log(`socket disconnected ${socket.id}`);
   });
 
+  socket.on("joinConversation", ({ conversationId }) => {
+    console.log("join conversation", conversationId, socket.id);
+    socket.join(conversationId);
+  });
+
+  socket.on("leaveConversation", ({ conversationId }) => {
+    console.log("leave conversation", conversationId, socket.id);
+    socket.leave(conversationId);
+  });
 
   registerSocketHandlers(socket, io);
 });
