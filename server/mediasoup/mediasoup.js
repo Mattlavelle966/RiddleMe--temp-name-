@@ -1,4 +1,7 @@
 const mediasoup = require('mediasoup');     
+//
+const ANNOUNCED_ADDRESS = process.env.MEDIASOUP_ANNOUNCED_ADDRESS || "127.0.0.1";
+console.log(`Path:${ANNOUNCED_ADDRESS}`);
 
 //worker handles real time transport protocol for media both audio and video,
 //real time communication, interactive connectivity establishment, how peers can connect through the Nat 
@@ -43,14 +46,14 @@ async function createTransport() {
         protocol: 'udp',
         ip: '0.0.0.0',
         // Address given back to the client
-        announcedAddress: '127.0.0.1',
+        announcedAddress: ANNOUNCED_ADDRESS,
         portRange: { min: 40000, max: 40100 }
       },
       {
         // Also allow TCP fallback
         protocol: 'tcp',
         ip: '0.0.0.0',
-        announcedAddress: '127.0.0.1',
+        announcedAddress: ANNOUNCED_ADDRESS,
         portRange: { min: 40000, max: 40100 }
       }
     ],
