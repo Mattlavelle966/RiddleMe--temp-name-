@@ -90,6 +90,9 @@ export default function ChatWindow({
           alignItems: "center",
         }}
       >
+		<TouchableOpacity onPress={onMenuToggle} style={!isOpen && {display:"none"}}>
+          <Ionicons name="menu-outline" size={30} color="white" />
+        </TouchableOpacity>
         <Text>No chat selected</Text>
       </View>
     );

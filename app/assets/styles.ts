@@ -100,7 +100,8 @@ export const darkmode = StyleSheet.create({
 		zIndex:999,
 		position:"absolute",
 		marginTop: 20,
-		height: "100%"
+		height: "100%",
+		minHeight: 600
 	},
 	connectionWindow: {
 		width: "100%",
