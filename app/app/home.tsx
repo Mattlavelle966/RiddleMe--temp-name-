@@ -1,7 +1,8 @@
-import { View, Text } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { Redirect } from "expo-router";
 import {  getToken, getUsername } from "../store/auth";
 import { getBaseUrl } from "../store/connection";
+import { Ionicons } from "@expo/vector-icons";
 
 
 import { useState } from "react";
@@ -14,6 +15,7 @@ import MainPanel from "../components/MainPanel";
 import { useIncomingCall } from "../hooks/useIncomingCall";
 
 import { useCallEvents, getMediaClient } from "../hooks/useCallEvents";
+import Header from "@/components/Header";
 
 
 
@@ -25,6 +27,7 @@ export default function Home() {
   const { incomingCall, showIncomingCall, clearIncomingCall } = useIncomingCall();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [activeChatUser, setActiveChatUser] = useState<{ id: string; username: string } | null>(null);
+  const [sideMenuOpen, setIsMenuOpen] = useState(true);
 
   useUserStatusPolling(users, token, setUserStatus);
   useCallEvents(token, showIncomingCall, clearIncomingCall, setUsers, getUsers);
@@ -63,6 +66,7 @@ export default function Home() {
   async function openChat(user: { id: string; username: string }) {
     setActiveChatUser(user);
     setActiveConversationId(null);
+    setIsMenuOpen(true);
 
     try {
       console.log("creating dm for", user.id, user.username);
@@ -74,36 +78,47 @@ export default function Home() {
     }
   }
 
+  function toggleMenu() {
+    setIsMenuOpen(prev => !prev);
+  }
+
 
   if (!token) {
     return <Redirect href="/login" />;
   }
 
   return (
-    <View style={{ flex: 1, padding: 20, gap: 12 }}>
-      <Text>Home</Text>
-      <Text>User: {getUsername()}</Text>
-      <Text>Backend: {getBaseUrl()}</Text>
-      <View style={{ flex: 1, flexDirection: "row", gap: 12 }}>
-        <ConnectionWindow
-          users={users}
-          userStatus={userStatus}
-          onConnect={connectToUser}
-          onMessage={openChat}
-        /> 
-
+    <View style={{paddingTop: 20}}>
+	    {/* <Text>User: {getUsername()}</Text> */}
+      {/* <Text>Backend: {getBaseUrl()}</Text> */}
+      {/* <Header 
+        users={users}
+        activeUser={activeChatUser}
+        menuOpen={!sideMenuOpen}
+        toggleMenu={toggleMenu}
+      /> */}
+      <ConnectionWindow
+        users={users}
+        userStatus={userStatus}
+        onConnect={connectToUser}
+        onMessage={openChat}
+        isOpen={sideMenuOpen}
+        toggleMenu={toggleMenu}
+        activeUser={activeChatUser}
+      />
      
 
-        <MainPanel
-          visible={!!incomingCall}
-          callerName={incomingCall?.callerName ?? ""}
-          callId={incomingCall?.callId ?? ""}
-          onAccept={acceptIncomingCall}
-          onDecline={declineIncomingCall}
-          activeConversationId={activeConversationId}
-          activeChatUser={activeChatUser}
-        />
-      </View>
+      <MainPanel
+        visible={!!incomingCall}
+        callerName={incomingCall?.callerName ?? ""}
+        callId={incomingCall?.callId ?? ""}
+        onAccept={acceptIncomingCall}
+        onDecline={declineIncomingCall}
+        activeConversationId={activeConversationId}
+        activeChatUser={activeChatUser}
+        onMenuToggle={toggleMenu}
+        isOpen={sideMenuOpen}
+      />
 
     </View>
   );
