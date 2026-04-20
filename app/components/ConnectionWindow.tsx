@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native";
+import { createConversation } from "../lib/api";
 import { Ionicons } from "@expo/vector-icons";
 
 type UserItem = {

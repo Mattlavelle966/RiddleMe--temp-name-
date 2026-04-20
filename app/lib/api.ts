@@ -1,5 +1,6 @@
 import { apiBase } from "./config";
 import { getToken } from "../store/auth";
+import { getBaseUrl } from "../store/connection";
 
 export async function api(path: string, options: RequestInit = {}) {
   const token = getToken();
@@ -34,7 +35,10 @@ export async function getMe() {
   return api("/api/me");
 }
 
-export async function createConversation(type: string = "dm") {
+export async function createConversation(
+  type: string = "dm",
+  targetUserId: string
+) {
   const token = getToken();
   const baseUrl = getBaseUrl();
 
@@ -44,14 +48,16 @@ export async function createConversation(type: string = "dm") {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ type }),
+    body: JSON.stringify({ type, targetUserId }),
   });
 
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    throw new Error("failed to create conversation");
+    throw new Error(data.error || "failed to create conversation");
   }
 
-  return await res.json();
+  return data;
 }
 
 export async function getMessages(conversationId: string) {
