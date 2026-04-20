@@ -1,6 +1,5 @@
-import { apiBase } from "./config";
 import { getToken } from "../store/auth";
-import { getBaseUrl } from "../store/connection";
+import { apiBase } from "./config";
 
 export async function api(path: string, options: RequestInit = {}) {
   const token = getToken();
@@ -39,72 +38,22 @@ export async function createConversation(
   type: string = "dm",
   targetUserId: string
 ) {
-  const token = getToken();
-  const baseUrl = getBaseUrl();
-
-  const res = await fetch(`${baseUrl}/api/conversations`, {
+  return api("/api/conversations", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({ type, targetUserId }),
   });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data.error || "failed to create conversation");
-  }
-
-  return data;
 }
 
 export async function getMessages(conversationId: string) {
-  const token = getToken();
-  const baseUrl = getBaseUrl();
-
-  const res = await fetch(`${baseUrl}/api/messages/${conversationId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error("failed to fetch messages");
-  }
-
-  return await res.json();
+  return api(`/api/messages/${conversationId}`);
 }
 
 export async function sendMessage(conversationId: string, body: string) {
-  const token = getToken();
-  const baseUrl = getBaseUrl();
-
-  const res = await fetch(`${baseUrl}/api/messages`, {
+  return api("/api/messages", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify({
       conversationId,
       body,
     }),
   });
-
-  if (!res.ok) {
-    throw new Error("failed to send message");
-  }
-
-  return await res.json();
-}
-
-async function messageUser(userId: string) {
-  try {
-    const data = await createConversation("dm");
-    router.push(`/messages/${data.conversation.id}`);
-  } catch (err) {
-    console.log("failed to open message screen", err);
-  }
 }

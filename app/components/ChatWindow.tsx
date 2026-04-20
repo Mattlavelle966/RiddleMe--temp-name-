@@ -23,7 +23,7 @@ export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuT
   async function handleSend() {
     if (!conversationId || !draft.trim()) return;
     try {
-      await sendMessage(conversationId, draft.trim());
+      const data = await sendMessage(conversationId, draft.trim());
       setDraft("");
       await loadMessages();
     } catch (err) {}
@@ -31,7 +31,45 @@ export default function ChatWindow({ conversationId, activeUser, isOpen, onMenuT
 
   useEffect(() => { loadMessages(); }, [conversationId]);
 
-  if (!conversationId || !activeUser) {
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    socket.emit("joinConversation", { conversationId });
+
+    return () => {
+      socket.emit("leaveConversation", { conversationId });
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleMessageCreated = ({ message }: { message: Message }) => {
+      if (message.conversationId !== conversationId) {
+        return;
+      }
+
+      setMessages((prev) => {
+        const alreadyExists = prev.some((msg) => msg.id === message.id);
+        if (alreadyExists) return prev;
+        return [...prev, message];
+      });
+    };
+
+    socket.on("messageCreated", handleMessageCreated);
+
+    return () => {
+      socket.off("messageCreated", handleMessageCreated);
+    };
+  }, [conversationId]);
+
+  if (!activeUser) {
     return (
       <View style={darkmode.chatContainer}>
         <LinearGradient colors={['rgba(60, 91, 100, 1)', 'rgba(48, 54, 54, 1)']} style={darkmode.headerBackground}>

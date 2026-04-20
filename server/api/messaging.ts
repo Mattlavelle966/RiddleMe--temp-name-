@@ -44,6 +44,9 @@ messagesRouter.post("/messages", auth, async (req, res) => {
 
     await db.insert(messages).values(message);
 
+    const io = req.app.get("io");
+    io.to(conversationId).emit("messageCreated", { message });
+
     return res.status(201).json({ message });
   } catch (err) {
     console.error("create message error:", err);
